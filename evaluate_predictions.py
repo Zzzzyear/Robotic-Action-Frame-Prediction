@@ -1,0 +1,1 @@
+# TODO: Evaluate using the SSIM (Structural Similarity Index) and PSNR (Peak Signal-to-Noise Ratio) metrics.
