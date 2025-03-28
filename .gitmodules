@@ -4,3 +4,6 @@
 [submodule "RoboTwin"]
 	path = RoboTwin
 	url = https://github.com/TianxingChen/RoboTwin.git
+[submodule "instruct_pix2pix"]
+	path = instruct_pix2pix
+	url = https://github.com/timothybrooks/instruct-pix2pix.git
