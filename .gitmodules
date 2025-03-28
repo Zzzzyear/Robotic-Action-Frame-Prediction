@@ -1,0 +1,3 @@
+[submodule "instruct-pix2pix"]
+	path = instruct-pix2pix
+	url = https://github.com/timothybrooks/instruct-pix2pix.git
