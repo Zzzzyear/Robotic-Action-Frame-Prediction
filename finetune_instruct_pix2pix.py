@@ -35,6 +35,8 @@ from packaging import version
 from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
+from PIL import Image
+from pathlib import Path
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 check_min_version("0.15.0.dev0")
@@ -715,20 +717,21 @@ def main():
     )
 
     def preprocess_images(examples):
-        original_images = np.concatenate(
-            [
-                convert_to_np(image, args.resolution)
-                for image in examples[original_image_column]
-            ]
-        )
-        edited_images = np.concatenate(
-            [
-                convert_to_np(image, args.resolution)
-                for image in examples[edited_image_column]
-            ]
-        )
-        # We need to ensure that the original and the edited images undergo the same
-        # augmentation transforms.
+        train_dir = Path(args.train_data_dir)
+        original_images = []
+        for filename in examples[original_image_column]:
+            image_path = train_dir / filename
+            image = Image.open(image_path)
+            original_images.append(convert_to_np(image, args.resolution))
+        original_images = np.concatenate(original_images)
+
+        edited_images = []
+        for filename in examples[edited_image_column]:
+            image_path = train_dir / filename
+            image = Image.open(image_path)
+            edited_images.append(convert_to_np(image, args.resolution))
+        edited_images = np.concatenate(edited_images)
+
         images = np.concatenate([original_images, edited_images])
         images = torch.tensor(images)
         images = 2 * (images / 255) - 1

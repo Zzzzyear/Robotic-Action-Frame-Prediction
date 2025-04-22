@@ -1,42 +1,55 @@
-import json
-import os
+# data_prep.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import json, sys
 from pathlib import Path
-from PIL import Image
 
-train_dir = Path("./sample_data/train")
-output_metadata = train_dir / "metadata.jsonl"
+def main():
+    train_dir = Path("./sample_data/train")
+    meta_file = train_dir / "metadata.jsonl"
+    if not train_dir.is_dir():
+        print(f"[错误] 训练目录不存在: {train_dir}", file=sys.stderr)
+        sys.exit(1)
 
-all_frames = sorted(
-    [f for f in os.listdir(train_dir) if f.startswith("robo") and f.endswith(".png")],
-    key=lambda x: int(x[4:-4])
-)
+    # 1) 找到所有 PNG 并按数字排序
+    imgs = sorted(
+        [p for p in train_dir.iterdir() if p.suffix.lower()==".png"],
+        key=lambda p: int(p.stem.replace("robo", ""))
+    )
+    if not imgs:
+        print("[错误] 没有找到任何 PNG 文件！", file=sys.stderr)
+        sys.exit(1)
 
-valid_pairs = 0  # 新增计数器
+    records = []
+    for p in imgs:
+        idx = int(p.stem.replace("robo",""))
+        target = train_dir / f"robo{idx+50}.png"
+        if target.exists():
+            # 真正的 “原图→+50 帧” 样本
+            rec = {
+                "file_name":      p.name,
+                "original_image": p.name,
+                "edited_image":   target.name,
+                "edit_prompt":    "预测50帧后的机械臂状态",
+            }
+        else:
+            # 占位，防止 ImageFolderBuilder 报 missing metadata
+            rec = {
+                "file_name":      p.name,
+                "original_image": p.name,
+                "edited_image":   p.name,
+                "edit_prompt":    "",
+            }
+        records.append(rec)
 
-with open(output_metadata, "w", encoding="utf-8") as meta_file:
-    for i in range(len(all_frames)):
-        current_frame = all_frames[i]
-        current_num = int(current_frame[4:-4])
-        target_num = current_num + 50
-        target_frame = f"robo{target_num}.png"
+    # 2) 写入 metadata.jsonl
+    with open(meta_file, "w", encoding="utf-8") as fw:
+        for r in records:
+            fw.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-        if target_frame in all_frames:
-            try:
-                with Image.open(train_dir / current_frame) as img:
-                    img.verify()
-                with Image.open(train_dir / target_frame) as img:
-                    img.verify()
+    print(f"✅ metadata.jsonl 生成完成，共 {len(records)} 条记录")
+    print(f"文件位置: {meta_file}")
 
-                meta_file.write(json.dumps({
-                    "original_image": current_frame,
-                    "edited_image": target_frame,
-                    "edit_prompt": "预测50帧后的机械臂状态"
-                }, ensure_ascii=False) + "\n")
-
-                valid_pairs += 1  # 成功配对时计数
-
-            except (IOError, SyntaxError) as e:
-                print(f"损坏图像跳过: {current_frame} -> {target_frame}, 错误: {str(e)}")
-
-print(f"数据集准备完成，共生成 {valid_pairs} 个有效训练样本")  # 使用实际计数
-print(f"元数据文件已保存至: {output_metadata}")
+if __name__ == "__main__":
+    main()
