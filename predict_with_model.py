@@ -1,95 +1,165 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-机械臂状态预测脚本
-功能：加载微调后的模型预测50帧后的机械臂状态
-"""
+"""Script to predict robotic arm states using a fine-tuned InstructPix2Pix model."""
 
-import os
-import torch
 import argparse
+import os
+from pathlib import Path
+import torch
+import numpy as np
 from PIL import Image
 from diffusers import StableDiffusionInstructPix2PixPipeline
+from datasets import load_dataset, Features
+from datasets.features import Value
 
+def parse_args():
+    """解析命令行参数"""
+    parser = argparse.ArgumentParser(description="Predict robotic arm states using a fine-tuned InstructPix2Pix model.")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        required=True,
+        help="Path to the fine-tuned model directory (e.g., ./robot_arm_model_scene1).",
+    )
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        default="./sample_data/validation",
+        help="Directory containing validation data.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="./predictions",
+        help="Directory to save predicted images.",
+    )
+    parser.add_argument(
+        "--scene_id",
+        type=int,
+        default=1,
+        help="Scene ID for prediction (e.g., 1 for scene1).",
+    )
+    parser.add_argument(
+        "--prompt",
+        type=str,
+        default="预测50帧后的机械臂状态",
+        help="Prompt for the prediction.",
+    )
+    parser.add_argument(
+        "--image_size",
+        type=int,
+        default=128,
+        help="Size to resize input images.",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=1,
+        help="Batch size for prediction.",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda" if torch.cuda.is_available() else "cpu",
+        help="Device to run the model on (cuda or cpu).",
+    )
+    return parser.parse_args()
 
-class RobotArmPredictor:
-    def __init__(self, model_dir, device=None):
-        """初始化预测器"""
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.pipe = self._load_model(model_dir)
+def load_image(image_path, image_size):
+    """加载并预处理图像"""
+    try:
+        image = Image.open(image_path).convert("RGB")
+        image = image.resize((image_size, image_size))
+        print(f"成功加载图像: {image_path}, 大小: {image.size}, 模式: {image.mode}")
+        return image
+    except Exception as e:
+        print(f"加载图像失败: {image_path}, 错误: {str(e)}")
+        return None
 
-    def _load_model(self, model_dir):
-        """加载微调后的模型"""
-        print(f"[系统] 正在加载模型从: {model_dir}")
-        pipe = StableDiffusionInstructPix2PixPipeline.from_pretrained(
-            model_dir,
-            torch_dtype=torch.float16 if 'cuda' in self.device else torch.float32,
-            safety_checker=None
-        ).to(self.device)
-        print("[系统] 模型加载完成")
-        return pipe
-
-    def predict(self, input_image, prompt, **kwargs):
-        """执行单次预测"""
-        return self.pipe(
-            prompt,
-            image=input_image,
-            **kwargs
-        ).images[0]
-
+def is_black_image(image):
+    """检查图像是否全黑"""
+    if image is None:
+        return True
+    img_array = np.array(image)
+    return np.all(img_array == 0)
 
 def main():
-    # 参数解析
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_dir", default="./robot_arm_model",
-                        help="训练好的模型目录")
-    parser.add_argument("--input_dir", default="./sample_data/predict/origin",
-                        help="待预测图像目录")
-    parser.add_argument("--output_dir", default="./sample_data/predict/predict_50frames",
-                        help="预测结果输出目录")
-    parser.add_argument("--prompt", default="预测50帧后的机械臂状态",
-                        help="预测指令文本")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="随机种子")
-    args = parser.parse_args()
+    """主函数：执行预测"""
+    args = parse_args()
 
-    # 初始化预测器
-    predictor = RobotArmPredictor(args.model_dir)
-
-    # 预测参数配置
-    predict_kwargs = {
-        "num_inference_steps": 50,
-        "image_guidance_scale": 1.3,
-        "guidance_scale": 6.5,
-        "generator": torch.Generator(predictor.device).manual_seed(args.seed)
-    }
-
-    # 确保输出目录存在
+    # 创建输出目录
     os.makedirs(args.output_dir, exist_ok=True)
 
-    # 处理所有输入图像
-    print(f"\n[任务] 开始处理 {args.input_dir} 中的图像")
-    for img_name in sorted(os.listdir(args.input_dir)):
-        if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
-            input_path = os.path.join(args.input_dir, img_name)
-            output_path = os.path.join(args.output_dir, img_name)
+    # 加载微调模型
+    print(f"加载模型: {args.model_path}")
+    try:
+        pipeline = StableDiffusionInstructPix2PixPipeline.from_pretrained(
+            args.model_path,
+            torch_dtype=torch.float16 if args.device == "cuda" else torch.float32,
+        ).to(args.device)
+    except Exception as e:
+        print(f"加载模型失败: {args.model_path}, 错误: {str(e)}")
+        return
 
-            print(f"  → 正在预测: {img_name}", end="", flush=True)
+    # 加载验证数据集
+    validation_data_dir = Path(args.data_dir) / f"scene{args.scene_id}"
+    validation_metadata_path = validation_data_dir / f"metadata_scene{args.scene_id}_validation.jsonl"
+    print(f"加载验证数据: {validation_metadata_path}")
 
-            try:
-                # 执行预测
-                input_image = Image.open(input_path).convert("RGB")
-                result = predictor.predict(input_image, args.prompt, **predict_kwargs)
+    features = Features({
+        "image": Value("string"),
+        "edited_image": Value("string"),
+        "edit_prompt": Value("string"),
+    })
 
-                # 保存结果
-                result.save(output_path)
-                print(" - 预测成功 ✅")
+    try:
+        dataset = load_dataset(
+            "json",
+            data_files=str(validation_metadata_path),
+            features=features
+        )["train"]
+        dataset = dataset.select_columns(["image", "edit_prompt"])
+        print(f"数据集加载成功，样本数: {len(dataset)}")
+    except Exception as e:
+        print(f"加载数据集失败: {validation_metadata_path}, 错误: {str(e)}")
+        return
 
-            except Exception as e:
-                print(f" - 预测失败 ❌ (错误: {str(e)})")
+    # 预测
+    for idx, example in enumerate(dataset):
+        image_path = os.path.join(validation_data_dir, example["image"])
+        prompt = example["edit_prompt"]
+        print(f"处理样本 {idx}: 图像: {image_path}, 提示: {prompt}")
 
-    print(f"\n[结果] 所有预测已完成，保存至: {os.path.abspath(args.output_dir)}")
+        # 加载输入图像
+        input_image = load_image(image_path, args.image_size)
+        if input_image is None:
+            print(f"跳过样本 {idx}: 无法加载图像")
+            continue
 
+        # 生成预测图像
+        try:
+            with torch.no_grad():
+                predicted_image = pipeline(
+                    prompt=prompt,
+                    image=input_image,
+                    num_inference_steps=50,
+                    guidance_scale=7.5,
+                    image_guidance_scale=1.5
+                ).images[0]
+        except Exception as e:
+            print(f"预测失败 样本 {idx}: 错误: {str(e)}")
+            continue
+
+        # 检查预测图像是否全黑
+        if is_black_image(predicted_image):
+            print(f"警告: 样本 {idx} 的预测图像全黑")
+        else:
+            print(f"样本 {idx} 预测图像正常")
+
+        # 保存预测图像
+        output_path = os.path.join(args.output_dir, f"predicted_scene{args.scene_id}_{idx}.png")
+        predicted_image.save(output_path)
+        print(f"预测图像已保存: {output_path}")
 
 if __name__ == "__main__":
     main()
