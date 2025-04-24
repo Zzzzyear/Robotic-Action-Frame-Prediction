@@ -13,7 +13,7 @@ for scene in 1 2 3; do
     accelerate launch --num_processes=1 --mixed_precision=fp16 \
         finetune_instruct_pix2pix.py \
         --pretrained_model_name_or_path "timbrooks/instruct-pix2pix" \
-        --train_data_dir "./sample_data/train" \
+        --train_data_dir "./data/train" \
         --output_dir "./robot_arm_model_scene${scene}" \
         --resolution 128 \
         --train_batch_size 1 \

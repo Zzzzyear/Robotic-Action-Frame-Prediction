@@ -10,7 +10,7 @@ for scene in 1 2 3; do
 
     python predict_with_model.py \
         --model_path "./robot_arm_model_scene${scene}" \
-        --data_dir "./sample_data/validation" \
+        --data_dir "./data/validation" \
         --output_dir "./predictions/scene${scene}" \
         --scene_id ${scene} \
         --prompt "预测50帧后的机械臂状态" \
