@@ -1,25 +1,25 @@
-name: finetune
+name: sft
 channels:
   - defaults
 dependencies:
-  - _libgcc_mutex=0.1=main
-  - _openmp_mutex=5.1=1_gnu
-  - bzip2=1.0.8=h5eee18b_6
-  - ca-certificates=2025.2.25=h06a4308_0
-  - ld_impl_linux-64=2.40=h12ee557_0
-  - libffi=3.4.4=h6a678d5_1
-  - libgcc-ng=11.2.0=h1234567_1
-  - libgomp=11.2.0=h1234567_1
-  - libstdcxx-ng=11.2.0=h1234567_1
-  - libuuid=1.41.5=h5eee18b_0
-  - ncurses=6.4=h6a678d5_0
-  - openssl=3.0.16=h5eee18b_0
-  - python=3.10.16=he870216_1
-  - readline=8.2=h5eee18b_0
-  - sqlite=3.45.3=h5eee18b_0
-  - tk=8.6.14=h39e8969_0
-  - xz=5.6.4=h5eee18b_1
-  - zlib=1.2.13=h5eee18b_1
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=5.1
+  - bzip2=1.0.8
+  - ca-certificates=2025.2.25
+  - ld_impl_linux-64=2.40
+  - libffi=3.4.4
+  - libgcc-ng=11.2.0
+  - libgomp=11.2.0
+  - libstdcxx-ng=11.2.0
+  - libuuid=1.41.5
+  - ncurses=6.4
+  - openssl=3.0.16
+  - python=3.10.16
+  - readline=8.2
+  - sqlite=3.45.3
+  - tk=8.6.14
+  - xz=5.6.4
+  - zlib=1.2.13
   - pip:
     - accelerate==0.27.2
     - aiohappyeyeballs==2.6.1
@@ -29,10 +29,10 @@ dependencies:
     - attrs==25.3.0
     - certifi==2025.1.31
     - charset-normalizer==3.4.1
-    - datasets==2.17.0
-    - diffusers==0.26.0
+    - datasets==2.18.0
+    - diffusers==0.28.2
     - dill==0.3.8
-    - filelock==3.13.1
+    - filelock==3.18.0
     - frozenlist==1.6.0
     - fsspec==2023.10.0
     - huggingface-hub==0.20.3
@@ -72,18 +72,19 @@ dependencies:
     - safetensors==0.5.3
     - setuptools==75.8.0
     - six==1.17.0
-    - sympy==1.13.1
+    - sympy==1.13.3
     - tokenizers==0.15.2
     - torch==2.2.1+cu118
+    - torchaudio==2.2.1+cu118
     - torchvision==0.17.1+cu118
     - tqdm==4.67.1
     - transformers==4.38.2
     - triton==2.2.0
-    - typing-extensions==4.12.2
+    - typing-extensions==4.13.2
     - tzdata==2025.2
     - urllib3==2.4.0
     - wheel==0.45.1
     - xxhash==3.5.0
     - yarl==1.20.0
     - zipp==3.21.0
-prefix: /root/miniconda3/envs/finetune
+prefix: /root/miniconda3/envs/sft
