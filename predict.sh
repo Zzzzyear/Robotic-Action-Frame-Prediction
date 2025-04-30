@@ -14,7 +14,7 @@ for scene in 1 2 3; do
         --output_dir "./predictions/scene${scene}" \
         --scene_id ${scene} \
         --prompt "预测50帧后的机械臂状态" \
-        --image_size 128 \
+        --image_size 320 \
         --batch_size 1 \
         --device cuda 2>&1 | tee -a "$LOG"
 

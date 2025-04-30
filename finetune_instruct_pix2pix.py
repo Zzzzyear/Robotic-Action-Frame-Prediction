@@ -27,6 +27,7 @@ from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 from PIL import Image
+import matplotlib.pyplot as plt
 
 # 设置 Hugging Face 镜像加速
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
@@ -35,6 +36,7 @@ os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 check_min_version("0.15.0.dev0")
 
 logger = get_logger(__name__, log_level="INFO")
+
 
 def parse_args():
     """解析命令行参数"""
@@ -170,10 +172,12 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def convert_to_np(image, resolution):
     """将 PIL 图像转换为 numpy 数组并调整大小"""
     image = image.convert("RGB").resize((resolution, resolution))
     return np.array(image).transpose(2, 0, 1)
+
 
 def main():
     """主函数：执行模型微调"""
@@ -341,7 +345,8 @@ def main():
     )
 
     # 使用加速器准备模型和数据
-    unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(unet, optimizer, train_dataloader, lr_scheduler)
+    unet, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(unet, optimizer, train_dataloader,
+                                                                          lr_scheduler)
     validation_dataloader = accelerator.prepare(validation_dataloader)
 
     # 设置混合精度
@@ -367,9 +372,17 @@ def main():
     progress_bar = tqdm(range(args.max_train_steps), disable=not accelerator.is_local_main_process)
     progress_bar.set_description("Steps")
 
+    # 用于存储每个 epoch 的训练损失和验证损失
+    train_losses = []
+    val_losses = []
+
     # 训练循环
     for epoch in range(args.num_train_epochs):
         unet.train()
+        epoch_train_loss = 0
+        num_train_batches = 0
+
+        # 训练集训练
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(unet):
                 # 编码图像到潜在空间
@@ -410,12 +423,21 @@ def main():
             progress_bar.set_postfix(**logs)
             accelerator.log(logs, step=step)
 
+            epoch_train_loss += loss.detach().item()
+            num_train_batches += 1
+
             if step >= args.max_train_steps:
                 break
+
+        # 计算当前 epoch 的平均训练损失
+        avg_train_loss = epoch_train_loss / num_train_batches
+        train_losses.append(avg_train_loss)
 
         # 验证
         if epoch % args.validation_epochs == 0:
             unet.eval()
+            total_val_loss = 0
+            num_val_batches = 0
             for val_batch in validation_dataloader:
                 original_image = val_batch["original_pixel_values"].to(weight_dtype)
                 edited_image = val_batch["edited_pixel_values"].to(weight_dtype)
@@ -434,7 +456,36 @@ def main():
                     concatenated_noisy_latents = torch.cat([noisy_latents, original_image_embeds], dim=1)
                     model_pred = unet(concatenated_noisy_latents, timesteps, encoder_hidden_states).sample
 
-                # 可根据需要保存或记录验证结果
+                # 计算验证损失
+                val_loss = F.mse_loss(model_pred.float(), noise.float(), reduction="mean")
+                total_val_loss += val_loss.item()
+                num_val_batches += 1
+
+            # 计算当前 epoch 的平均验证损失
+            if num_val_batches > 0:
+                avg_val_loss = total_val_loss / num_val_batches
+                val_losses.append(avg_val_loss)
+            else:
+                val_losses.append(0)
+        else:
+            # 如果当前 epoch 不进行验证，将验证损失设为上一个 epoch 的值或 0
+            if val_losses:
+                val_losses.append(val_losses[-1])
+            else:
+                val_losses.append(0)
+
+        print(f'Epoch {epoch + 1}: Train Loss = {avg_train_loss}, Val Loss = {val_losses[-1]}')
+
+    # 训练结束后绘制损失曲线
+    if accelerator.is_main_process:
+        plt.plot(train_losses, label='Training Loss')
+        plt.plot(val_losses, label='Validation Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training and Validation Loss')
+        plt.legend()
+        plt.savefig(os.path.join(args.output_dir, 'training_val_loss15.png'))
+        plt.close()
 
     # 保存模型
     accelerator.wait_for_everyone()
@@ -448,6 +499,7 @@ def main():
             revision=args.revision,
         )
         pipeline.save_pretrained(args.output_dir)
+
 
 if __name__ == "__main__":
     main()

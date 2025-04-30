@@ -15,16 +15,16 @@ for scene in 1 2 3; do
         --pretrained_model_name_or_path "timbrooks/instruct-pix2pix" \
         --train_data_dir "./data/train" \
         --output_dir "./robot_arm_model_scene${scene}" \
-        --resolution 128 \
-        --train_batch_size 1 \
-        --gradient_accumulation_steps 1 \
-        --learning_rate 1e-5 \
-        --lr_scheduler "constant_with_warmup" \
-        --lr_warmup_steps 10 \
-        --max_train_steps 100 \
+        --resolution 256 \
+        --train_batch_size 32 \
+        --gradient_accumulation_steps 8 \
+        --learning_rate 2e-5 \
+        --lr_scheduler "cosine" \
+        --lr_warmup_steps 30 \
+        --max_train_steps 300 \
         --validation_prompt "预测50帧后的机械臂状态" \
-        --num_validation_images 1 \
-        --validation_epochs 5 \
+        --num_validation_images 4 \
+        --validation_epochs 1 \
         --checkpointing_steps 50 \
         --mixed_precision "fp16" \
         --seed 42 \

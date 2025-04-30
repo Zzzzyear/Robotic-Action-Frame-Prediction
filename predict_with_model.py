@@ -12,6 +12,7 @@ from diffusers import StableDiffusionInstructPix2PixPipeline
 from datasets import load_dataset, Features
 from datasets.features import Value
 
+
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="Predict robotic arm states using a fine-tuned InstructPix2Pix model.")
@@ -48,7 +49,7 @@ def parse_args():
     parser.add_argument(
         "--image_size",
         type=int,
-        default=128,
+        default=320,  # 修改默认值为 320
         help="Size to resize input images.",
     )
     parser.add_argument(
@@ -65,16 +66,18 @@ def parse_args():
     )
     return parser.parse_args()
 
+
 def load_image(image_path, image_size):
     """加载并预处理图像"""
     try:
         image = Image.open(image_path).convert("RGB")
-        image = image.resize((image_size, image_size))
+        image = image.resize((320, 240))  # 修改为 320x240
         print(f"成功加载图像: {image_path}, 大小: {image.size}, 模式: {image.mode}")
         return image
     except Exception as e:
         print(f"加载图像失败: {image_path}, 错误: {str(e)}")
         return None
+
 
 def is_black_image(image):
     """检查图像是否全黑"""
@@ -82,6 +85,7 @@ def is_black_image(image):
         return True
     img_array = np.array(image)
     return np.all(img_array == 0)
+
 
 def main():
     """主函数：执行预测"""
@@ -125,7 +129,7 @@ def main():
         return
 
     # 预测
-    for idx, example in enumerate(dataset):
+    for idx, example in enumerate(dataset, start=80):
         image_path = os.path.join(validation_data_dir, example["image"])
         prompt = example["edit_prompt"]
         print(f"处理样本 {idx}: 图像: {image_path}, 提示: {prompt}")
@@ -160,6 +164,7 @@ def main():
         output_path = os.path.join(args.output_dir, f"predicted_scene{args.scene_id}_{idx}.png")
         predicted_image.save(output_path)
         print(f"预测图像已保存: {output_path}")
+
 
 if __name__ == "__main__":
     main()
