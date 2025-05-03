@@ -1,10 +1,10 @@
-# Robotic-Action-Frame-Prediction
+# 🤖 Robotic-Action-Frame-Prediction
 
-**Authors**: Zzzzyear, Wingedma, BreezeHe
+**Authors**: [Zzzzyear](https://github.com/Zzzzyear), [Wingedma](https://github.com/Wingedma), [BreezeHe](https://github.com/BreezeHe)
 
 This is an AI model project for robotic arm action frame prediction. Below are detailed instructions for setting up the environment and running the project.
 
-Project directory structure: `~/Robotic-Action-Frame-Prediction` (running directory)
+**Project directory structure**: `~/Robotic-Action-Frame-Prediction` (running directory)
 
 ```
 Robotic-Action-Frame-Prediction/
@@ -31,10 +31,10 @@ Robotic-Action-Frame-Prediction/
 └── predict_with_model.py         # Script for making predictions with the fine-tuned model
 ```
 
-## Project Overview
+## 🌟 Project Overview
 This project aims to predict future states of robotic arm actions by fine-tuning the pre-trained InstructPix2Pix model. The project includes data preprocessing, model fine-tuning, prediction, and result evaluation.
 
-## Environment Setup
+## 🛠️ Environment Setup
 
 ### 1. Create and Activate Conda Environment
 All scripts need to be run in the `~/Robotic-Action-Frame-Prediction/` directory. First, create a conda environment named `robotic` and activate it:
@@ -65,7 +65,7 @@ pip install scikit-image
 ### 5. Handle Missing Packages
 If any packages are still missing during execution, manually install the necessary components.
 
-## Running Steps
+## 🚀 Running Steps
 
 ### 1. Data Preprocessing
 All scripts need to be run in the `~/Robotic-Action-Frame-Prediction/` directory. Run the following command to process the data. Each scene will use 80 samples for training and 20 samples for validation:
@@ -95,7 +95,7 @@ python evaluate_predictions.py
 ```
 This script evaluates the prediction results using SSIM (Structural Similarity Index) and PSNR (Peak Signal-to-Noise Ratio) metrics and outputs the average SSIM and PSNR values for each scene.
 
-## Project Files Description
+## 📂 Project Files Description
 - `data_prep.py`: Data preprocessing script for processing raw data into training and validation sets and generating metadata files.
 - `finetune.sh`: Model fine-tuning script for fine-tuning the `InstructPix2Pix` model.
 - `finetune_instruct_pix2pix.py`: Specific implementation script for model fine-tuning, including data loading and model training logic.
@@ -105,4 +105,4 @@ This script evaluates the prediction results using SSIM (Structural Similarity I
 - `requirements_finetune.txt`: List of required dependency packages for the project.
 - `environment_finetune.yml`: Conda environment configuration file for the project.
 
-By following the above steps, you can complete the entire process of robotic arm action frame prediction, including data preprocessing, model fine-tuning, prediction, and result evaluation.
+By following the above steps, you can complete the entire process of robotic arm action frame prediction, including data preprocessing, model fine-tuning, prediction, and result evaluation. 🎉
