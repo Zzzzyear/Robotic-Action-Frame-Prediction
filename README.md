@@ -95,6 +95,36 @@ python evaluate_predictions.py
 ```
 This script evaluates the prediction results using SSIM (Structural Similarity Index) and PSNR (Peak Signal-to-Noise Ratio) metrics and outputs the average SSIM and PSNR values for each scene.
 
+## 📊 Result Examples
+Below are some examples of the model's predictions compared to the input and target images.
+
+<table>
+<tr>
+<th>Example</th>
+<th>Input</th>
+<th>Target</th>
+<th>Output</th>
+</tr>
+<tr>
+<td>1</td>
+<td><img src="example/input1.png" width="200"></td>
+<td><img src="example/target1.png" width="200"></td>
+<td><img src="example/output1.png" width="200"></td>
+</tr>
+<tr>
+<td>2</td>
+<td><img src="example/input2.png" width="200"></td>
+<td><img src="example/target2.png" width="200"></td>
+<td><img src="example/output2.png" width="200"></td>
+</tr>
+<tr>
+<td>3</td>
+<td><img src="example/input3.png" width="200"></td>
+<td><img src="example/target3.png" width="200"></td>
+<td><img src="example/output3.png" width="200"></td>
+</tr>
+</table>
+
 ## 📂 Project Files Description
 - `data_prep.py`: Data preprocessing script for processing raw data into training and validation sets and generating metadata files.
 - `finetune.sh`: Model fine-tuning script for fine-tuning the `InstructPix2Pix` model.
