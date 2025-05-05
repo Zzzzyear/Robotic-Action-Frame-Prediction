@@ -10,8 +10,8 @@ This is an AI model project for robotic arm action frame prediction. Below are d
 Robotic-Action-Frame-Prediction/
 ├── instruct-pix2pix/
 │   ├── ...                # Original files and folders of instruct-pix2pix
-├── RoboTwin/
-│   ├── ...                # Original files and folders of RoboTwin
+├── RobotWin_NEW/
+│   ├── ...                # Generating data using RoboTwin
 ├── data/
 │   ├── block_hammer_beat/
 │   │   ├── 0000.png       # Observation result images
